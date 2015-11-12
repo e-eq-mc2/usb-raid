@@ -40,6 +40,19 @@ class Usb::Tree::Blob
     return "File: " + @name + "(" + @mode.to_s + ")"
   end
 
+  def to_core
+    {
+      uid:      @uid,
+      gid:      @gid,
+      atime:    @actime,
+      modtime:  @modtime,
+      xattr:    @xattr,
+      name:     @name,
+      mode:     @mode,
+      content:  @content,
+    }
+  end
+
 end
 
 

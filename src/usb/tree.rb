@@ -1,4 +1,5 @@
-require "rfuse"
+require 'rfuse'
+require 'pry'
 
 class Usb::Tree
 end
@@ -30,9 +31,11 @@ class Usb::Tree
 
   def mkdir(ctx, path, mode)
     name = File.basename(path)
-    obj  = Node.new(name, mode)
+    obj  = Node.new(name: name, mode: mode)
 
-    @root.insert_obj(obj, path)
+    parent = @root.insert_obj(obj, path)
+
+    parent
   end #mkdir
 
   def mknod(ctx,path,mode,major,minor)
@@ -190,5 +193,3 @@ class Usb::Tree
   end
 
 end #class Fuse
-
-

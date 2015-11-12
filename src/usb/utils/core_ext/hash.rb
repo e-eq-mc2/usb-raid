@@ -1,4 +1,8 @@
 class Hash
+  require 'active_support'
+  require 'active_support/core_ext'
+  require 'active_support/core_ext/hash'
+
   def valid_types?(key2type)
     key2type.each do |k,expected_type|
       v = self[k]

@@ -1,4 +1,7 @@
 module Usb::Utils::Logger
+  require 'logger'
+
+
   attr_accessor :logger
 
   SHIFT_AGE  = 3

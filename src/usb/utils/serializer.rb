@@ -1,4 +1,6 @@
 module Usb::Utils::Serializer
+  require 'json'
+
   DEFAULT_FORMAT = :json
 
   FORMAT2CONTENT_TYPE = {

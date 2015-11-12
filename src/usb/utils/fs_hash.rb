@@ -37,31 +37,34 @@ class Usb::Utils::FsHash
     }
   end
 
-  attr_reader :root, :created_at
+  attr_reader :root, :persistent, :created_at
 
-  def initialize(root = nil)
-    @created_at = Time.now
+  def initialize(root = nil, persistent: false)
     self.class.debug = true
-    setup(root)
+    setup(root, persistent: persistent)
   end
 
-  def setup(root = nil)
-    @root = root || Dir.mktmpdir
-    ObjectSpace.define_finalizer(self, self.class.auto_clean_proc(@root.dup))
+  def setup(root = nil, persistent:)
+    @created_at = Time.now
+    @root       = root || Dir.mktmpdir
+    @persistent = persistent
+    ObjectSpace.define_finalizer(self, self.class.auto_clean_proc(@root.dup)) if not persistent
     self
   end
 
   def clear
     self.class.clean(root)
-    setup
+    setup(@root, persistent: @persistent)
   end
 
   def [](key)
+    puts "key= #{key}"
     path = key2path(key)
     read(path)
   end
 
   def []=(key, val)
+    puts "key= #{key}"
     path = key2path(key)
     write(path, val)
   end
