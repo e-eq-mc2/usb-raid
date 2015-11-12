@@ -76,20 +76,20 @@ class Usb::Tree
   end
 
   def unlink(ctx,path)
-    @root.remove_obj(path)
+    @root.remove(path)
   end
 
   def rmdir(ctx,path)
-    @root.remove_obj(path)
+    @root.remove(path)
   end
 
   #def symlink(ctx,path,as)
   #end
 
-  def rename(ctx,path,as)
-    d = @root.search(path)
-    @root.remove_obj(path)
-    @root.insert(d,path)
+  def rename(ctx ,from_path, to_path)
+    obj = @root.search(from_path)
+    @root.remove(from_path)
+    @root.insert(obj, to_path)
   end
 
   #def link(ctx,path,as)

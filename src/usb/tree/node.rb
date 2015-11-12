@@ -55,14 +55,18 @@ class Usb::Tree::Node
     @name == ""
   end
 
-  def add_child(obj)
+  def insert_child(obj)
     obj.save
     child_meta = obj.to_meta
     @child_metas[obj.name] = child_meta
 
     save
+  end
 
-    child_meta
+  def remove_child(name)
+    @child_metas.delete(name)
+
+    save
   end
 
   def save
@@ -102,11 +106,31 @@ class Usb::Tree::Node
 
     child = obj
     ancestors.reverse.each do |cur|
-      cur.add_child(child)
+      cur.insert_child(child)
       child = cur
     end
 
-    return parent
+    parent
+  end
+
+  def remove(path)
+    parent_path = File.dirname(path)
+
+    ancestors = []
+    parent = search(parent_path, ancestors: ancestors)
+    
+    raise Errno::ENOTDIR.new(parent.name) if not parent.dir?
+
+    child_name = File.basename(path)
+    parent.remove_child(child_name)
+
+    ancestors.pop
+
+    child = parent
+    ancestors.reverse.each do |cur|
+      cur.insert_child(child)
+      child = cur
+    end
   end
 
   def write(path, data:, offset:)
@@ -123,7 +147,7 @@ class Usb::Tree::Node
 
     child = blob
     ancestors.reverse.each do |cur|
-      cur.add_child(child)
+      cur.insert_child(child)
       child = cur
     end
 
@@ -139,7 +163,7 @@ class Usb::Tree::Node
 
     child = blob
     ancestors.reverse.each do |cur|
-      cur.add_child(child)
+      cur.insert_child(child)
       child = cur
     end
 
@@ -151,11 +175,6 @@ class Usb::Tree::Node
     raise Errno::EISDIR.new(path) if not blob.file?
 
     blob.read(offset: offset, size: size)
-  end
-
-  def remove_obj(path)
-    d=self.search(File.dirname(path))
-    d.delete(File.basename(path))
   end
 
   def search(path, ancestors: nil)
