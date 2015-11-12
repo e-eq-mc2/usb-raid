@@ -5,6 +5,12 @@ class Usb::Tree::Node
     def type 
       'node'
     end
+
+    def load_HEAD
+      digest = read('HEAD')
+
+      do_load(digest) if digest
+    end
   end
 
   def initialize(
@@ -45,6 +51,10 @@ class Usb::Tree::Node
     true
   end
 
+  def root?
+    @name == ""
+  end
+
   def add(obj)
     obj.save
     child_meta = obj.to_meta
@@ -53,6 +63,13 @@ class Usb::Tree::Node
     save
 
     child_meta
+  end
+
+  def save
+    digest = super
+    self.class.write('HEAD', digest) if root?
+
+    digest
   end
 
   def reload_children

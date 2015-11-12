@@ -10,7 +10,7 @@ require_relative 'tree/blob'
 
 class Usb::Tree
   def initialize(root)
-    @root=root
+    @root = root
   end
 
   # The new readdir way, c+p-ed from getdir

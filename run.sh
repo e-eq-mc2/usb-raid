@@ -1,4 +1,4 @@
 #!/bin/sh
 
-rm -rf data
+#rm -rf data
 bundle exec ruby bin/run.rb /tmp/fuse

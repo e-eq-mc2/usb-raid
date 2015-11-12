@@ -100,6 +100,8 @@ module Usb::Tree::Base
     digest = to_digest(str)
 
     self.class.write(digest, str)
+
+    digest
   end
 
 end
