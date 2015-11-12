@@ -40,7 +40,7 @@ class Usb::Tree
 
   def mknod(ctx,path,mode,major,minor)
     name = File.basename(path)
-    obj  = Blob.new(name, mode, ctx.uid, ctx.gid)
+    obj  = Blob.new(name: name, mode: mode, uid: ctx.uid, gid: ctx.gid)
 
     @root.insert_obj(obj, path)
   end #mknod
@@ -97,23 +97,11 @@ class Usb::Tree
   #end
 
   def read(ctx,path,size,offset,fi)
-    d = @root.search(path)
-    if (d.dir?)
-      raise Errno::EISDIR.new(path)
-      return nil
-    else
-      return d.content[offset..offset + size - 1]
-    end
+    @root.read(path, offset: offset, size: size)
   end
 
-  def write(ctx,path,buf,offset,fi)
-    d=@root.search(path)
-    if (d.dir?)
-      raise Errno::EISDIR.new(path)
-    else
-      d.content[offset..offset+buf.length - 1] = buf
-    end
-    return buf.length
+  def write(ctx, path, data, offset, fi)
+    @root.write(path, data: data, offset: offset)
   end
 
   def setxattr(ctx,path,name,value,size,flags)

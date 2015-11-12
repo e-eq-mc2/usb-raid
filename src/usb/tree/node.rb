@@ -1,6 +1,12 @@
 class Usb::Tree::Node
   include Usb::Tree::Base
 
+  class << self
+    def type 
+      'node'
+    end
+  end
+
   def initialize(
     name:, 
     mode:, 
@@ -12,10 +18,11 @@ class Usb::Tree::Node
     xattr:       nil,
     child_metas: nil
   )
+    fail if type && type != self.type
+
     @name    = name
     @mode    = mode
 
-    fail if type && type != 'node'
 
     @uid     = uid     || 0
     @gid     = gid     || 0
@@ -51,8 +58,7 @@ class Usb::Tree::Node
   def reload_children
     children = {}
     each_meta do |name, meta|
-      digest = meta.fetch(:digest) || fail
-      child  = self.class.load(digest) || fail
+      child = self.class.load(meta)
       children[name] = child
     end
 
@@ -87,6 +93,34 @@ class Usb::Tree::Node
     return parent
   end
 
+  def write(path, data:, offset:)
+    parent_path = File.dirname(path)
+
+    ancestors = []
+    blob = search(path, ancestors: ancestors)
+
+    raise Errno::EISDIR.new(path) if not blob.file?
+
+    length = blob.write(data: data, offset: offset)
+
+    ancestors.pop
+
+    child = blob
+    ancestors.reverse.each do |cur|
+      cur.add(child)
+      child = cur
+    end
+
+    length
+  end
+
+  def read(path, offset: 0, size:)
+    blob = search(path)
+    raise Errno::EISDIR.new(path) if not blob.file?
+
+    blob.read(offset: offset, size: size)
+  end
+
   def remove_obj(path)
     d=self.search(File.dirname(path))
     d.delete(File.basename(path))
@@ -111,10 +145,10 @@ class Usb::Tree::Node
       child_meta = @child_metas[ child_name ]
 
       if child_meta
-        child_digest = child_meta.fetch(:digest) || fail
-        child = self.class.load(child_digest)
+        child = self.class.load(child_meta) || fail
 
         ancestors.push(child) if ancestors
+
         return child.follow(path_array, ancestors: ancestors)
       else
         raise Errno::ENOENT.new

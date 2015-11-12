@@ -16,13 +16,24 @@ module Usb::Tree::Base
       storage[key]
     end
 
-    def load(key)
+    def load(meta)
+      type   = meta.fetch(:type  )
+      digest = meta.fetch(:digest)
+
+      case type
+      when Usb::Tree::Node.type then Usb::Tree::Node.do_load(digest)
+      when Usb::Tree::Blob.type then Usb::Tree::Blob.do_load(digest)
+      else fail
+      end
+    end
+
+    def do_load(key)
       str = read(key) 
       return nil if str.nil?
 
       core = unpack(str)
 
-      obj  = new(core)
+      obj = new(core)
     end
 
     def pack(core)
@@ -67,7 +78,7 @@ module Usb::Tree::Base
   end
 
   def type
-    dir? ? 'node' : 'blob'
+    self.class.type
   end
 
   def dump
