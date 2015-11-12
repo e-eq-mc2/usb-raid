@@ -134,8 +134,6 @@ class Usb::Tree::Node
   end
 
   def write(path, data:, offset:)
-    parent_path = File.dirname(path)
-
     ancestors = []
     blob = search(path, ancestors: ancestors)
 
@@ -152,6 +150,21 @@ class Usb::Tree::Node
     end
 
     length
+  end
+
+  def setxattr(path, name:, data:, flags:)
+    ancestors = []
+    obj = search(path, ancestors: ancestors)
+
+    obj.setxattr(name, data, flags)
+
+    ancestors.pop
+
+    child = obj
+    ancestors.reverse.each do |cur|
+      cur.insert_child(child)
+      child = cur
+    end
   end
 
   def truncate(path, last:)

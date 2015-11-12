@@ -61,8 +61,9 @@ module Usb::Tree::Base
     @xattr.keys
   end
 
-  def setxattr(name, value, flag)
-    @xattr[name]=value #TODO:don't ignore flag
+  def setxattr(name, data, flags)
+    @xattr[name] = data #TODO:don't ignore flag
+    save
   end
 
   def getxattr(name)

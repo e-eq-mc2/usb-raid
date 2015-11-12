@@ -103,16 +103,15 @@ class Usb::Tree
     @root.write(path, data: data, offset: offset)
   end
 
-  def setxattr(ctx,path,name,value,size,flags)
-    d=@root.search(path)
-    d.setxattr(name,value,flags)
+  def setxattr(ctx, path, name, data, flags)
+    @root.setxattr(path, name: name, data: data, flags: flags)
   end
 
   def getxattr(ctx,path,name)
-    d=@root.search(path)
-    if (d)
-      value=d.getxattr(name)
-      if (!value)
+    obj = @root.search(path)
+    if obj
+      value = obj.getxattr(name)
+      if !value
         value=""
         #raise Errno::ENOENT.new #TODO raise the correct error :
         #NOATTR which is not implemented in Linux/glibc
@@ -120,13 +119,12 @@ class Usb::Tree
     else
       raise Errno::ENOENT.new
     end
-    return value
+    value 
   end
 
   def listxattr(ctx,path)
-    d=@root.search(path)
-    value= d.listxattr()
-    return value
+    obj = @root.search(path)
+    value = obj.listxattr
   end
 
   def removexattr(ctx,path,name)
