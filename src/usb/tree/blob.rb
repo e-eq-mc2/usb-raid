@@ -44,7 +44,8 @@ class Usb::Tree::Blob
   end
 
   def write(data:, offset: 0)
-    range = offset..(offset + data.length - 1)
+    last  = offset + data.length - 1
+    range = offset..last
     @content[range] = data
 
     save
@@ -52,8 +53,16 @@ class Usb::Tree::Blob
     data.length
   end
 
+  def truncate(last)
+    range = 0..last
+    @content = @content[range]
+
+    save
+  end
+
   def read(offset:, size:)
-    range = offset..offset + size - 1
+    last  = offset + size - 1
+    range = offset..last
 
     data = @content[range]
 
@@ -65,6 +74,8 @@ class Usb::Tree::Blob
   end
 
   def follow(path_array, ancestors: nil)
+    ancestors << self if ancestors
+
     if path_array.length != 0 then
       raise Errno::ENOTDIR.new
     else

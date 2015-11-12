@@ -15,34 +15,34 @@ class Usb::Tree
 
   # The new readdir way, c+p-ed from getdir
   def readdir(ctx, path, filler, offset, ffi)
-    entry = @root.search(path)
+    node = @root.search(path)
 
-    raise Errno::ENOTDIR.new(path) if entry.file?
+    raise Errno::ENOTDIR.new(path) if node.file?
 
-    entry.each do |name, obj|
+    node.each do |name, obj|
       filler.push(name, obj.stat, 0)
     end
   end
 
   def getattr(ctx, path)
-    entry = @root.search(path)
-    return entry.stat
+    obj = @root.search(path)
+    obj.stat
   end #getattr
 
   def mkdir(ctx, path, mode)
     name = File.basename(path)
-    obj  = Node.new(name: name, mode: mode)
+    node = Node.new(name: name, mode: mode)
 
-    parent = @root.insert_obj(obj, path)
+    parent = @root.insert(node, path)
 
     parent
   end #mkdir
 
   def mknod(ctx,path,mode,major,minor)
     name = File.basename(path)
-    obj  = Blob.new(name: name, mode: mode, uid: ctx.uid, gid: ctx.gid)
+    blob = Blob.new(name: name, mode: mode, uid: ctx.uid, gid: ctx.gid)
 
-    @root.insert_obj(obj, path)
+    @root.insert(blob, path)
   end #mknod
 
   def open(ctx,path,ffi)
@@ -65,9 +65,8 @@ class Usb::Tree
     d.gid=gid
   end
 
-  def truncate(ctx,path,offset)
-    d=@root.search(path)
-    d.content = d.content[0..offset]
+  def truncate(ctx, path, last)
+    @root.truncate(path, last: last)
   end
 
   def utime(ctx,path,actime,modtime)
@@ -90,7 +89,7 @@ class Usb::Tree
   def rename(ctx,path,as)
     d = @root.search(path)
     @root.remove_obj(path)
-    @root.insert_obj(d,path)
+    @root.insert(d,path)
   end
 
   #def link(ctx,path,as)

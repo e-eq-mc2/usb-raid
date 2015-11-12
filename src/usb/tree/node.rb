@@ -55,7 +55,7 @@ class Usb::Tree::Node
     @name == ""
   end
 
-  def add(obj)
+  def add_child(obj)
     obj.save
     child_meta = obj.to_meta
     @child_metas[obj.name] = child_meta
@@ -72,8 +72,9 @@ class Usb::Tree::Node
     digest
   end
 
-  def reload_children
+  def load_children
     children = {}
+
     each_meta do |name, meta|
       child = self.class.load(meta)
       children[name] = child
@@ -83,7 +84,7 @@ class Usb::Tree::Node
   end
 
   def each(&block)
-    children = reload_children 
+    children = load_children 
     children.each &block
   end
 
@@ -91,19 +92,17 @@ class Usb::Tree::Node
     @child_metas.each &block
   end
 
-  def insert_obj(obj, path)
+  def insert(obj, path)
     parent_path = File.dirname(path)
 
     ancestors = []
     parent = search(parent_path, ancestors: ancestors)
     
-    if not parent.dir?
-      raise Errno::ENOTDIR.new(parent.name) 
-    end
+    raise Errno::ENOTDIR.new(parent.name) if not parent.dir?
 
     child = obj
     ancestors.reverse.each do |cur|
-      cur.add(child)
+      cur.add_child(child)
       child = cur
     end
 
@@ -124,11 +123,27 @@ class Usb::Tree::Node
 
     child = blob
     ancestors.reverse.each do |cur|
-      cur.add(child)
+      cur.add_child(child)
       child = cur
     end
 
     length
+  end
+
+  def truncate(path, last:)
+    ancestors = []
+    blob = search(path, ancestors: ancestors)
+    blob.truncate(last)
+
+    ancestors.pop
+
+    child = blob
+    ancestors.reverse.each do |cur|
+      cur.add_child(child)
+      child = cur
+    end
+
+    last
   end
 
   def read(path, offset: 0, size:)
@@ -148,13 +163,13 @@ class Usb::Tree::Node
 
     path_array.shift #Note: drop root("")
 
-    ancestors.push(self) if ancestors
-
     obj = follow(path_array, ancestors: ancestors)
     return obj
   end
 
   def follow(path_array, ancestors: nil)
+    ancestors << self if ancestors
+
     if path_array.empty? #Note: leaf
       return self
     else
@@ -163,8 +178,6 @@ class Usb::Tree::Node
 
       if child_meta
         child = self.class.load(child_meta) || fail
-
-        ancestors.push(child) if ancestors
 
         return child.follow(path_array, ancestors: ancestors)
       else
