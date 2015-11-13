@@ -36,4 +36,21 @@ class String
     true
   end
 
+  def ^ (second)
+    s = ""
+    s.force_encoding("ASCII-8BIT")
+    [self.size,second.size].max.times do |i|
+      s << ((self[i] || 0).ord ^ (second[i] || 0).ord)
+    end
+    return s
+  end
+
+  def xor(second)
+    s = ""
+    s.force_encoding("ASCII-8BIT")
+    [self.size,second.size].max.times.zip(self.each_byte.to_a,second.each_byte.to_a) do |i,a,b|
+      s << a ^ b
+    end
+  end
+
 end

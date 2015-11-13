@@ -1,19 +1,16 @@
 module Usb::Tree::Base
 
   module ClassMethods
-    attr_accessor :data_path
-
-    def storage
-      path = data_path || fail
-      @storage ||= Usb::Utils::FsHash.new(path, persistent: true)
+    def setup_storage(paths)
+      @storage = Usb::Storage.new(paths)
     end
 
     def write(key, str)
-      storage[key] = str
+      @storage[key] = str
     end
 
     def read(key)
-      storage[key]
+      @storage[key]
     end
 
     def load(meta)
