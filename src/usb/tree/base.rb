@@ -1,16 +1,12 @@
 module Usb::Tree::Base
 
   module ClassMethods
-    def setup_storage(paths)
-      @storage = Usb::Storage.new(paths)
-    end
-
     def write(key, str)
-      @storage[key] = str
+      Usb::Tree.storage[key] = str
     end
 
     def read(key)
-      @storage[key]
+      Usb::Tree.storage[key]
     end
 
     def load(meta)
@@ -50,7 +46,6 @@ module Usb::Tree::Base
   def self.included(base)
     base.extend(ClassMethods)
   end
-
 
   attr_accessor :name, :mode , :actime, :modtime, :uid, :gid
 
@@ -100,6 +95,10 @@ module Usb::Tree::Base
     self.class.write(digest, str)
 
     digest
+  end
+
+  def to_s
+    "#{type}: #{to_core}"
   end
 
 end

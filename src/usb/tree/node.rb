@@ -5,16 +5,9 @@ class Usb::Tree::Node
     def type 
       'node'
     end
-
-    def load_HEAD
-      digest = read('HEAD')
-
-      do_load(digest) if digest
-    end
   end
 
   def initialize(
-    name:, 
     mode:, 
     type:        nil,
     uid:         nil,
@@ -26,10 +19,7 @@ class Usb::Tree::Node
   )
     fail if type && type != self.type
 
-    @name    = name
     @mode    = mode
-
-
     @uid     = uid     || 0
     @gid     = gid     || 0
     @actime  = actime  || Time.now
@@ -40,7 +30,7 @@ class Usb::Tree::Node
   end
 
   def stat
-    RFuse::Stat.directory(mode,:uid => uid, :gid => gid, :atime => actime, :mtime => modtime, :size => size)
+    RFuse::Stat.directory(mode, uid: uid, gid: gid, atime: actime, mtime: modtime, size: size)
   end
 
   def size
@@ -51,175 +41,49 @@ class Usb::Tree::Node
     true
   end
 
-  def root?
-    @name == ""
-  end
-
-  def insert_child(obj)
-    obj.save
-    child_meta = obj.to_meta
-    @child_metas[obj.name] = child_meta
-
-    save
-  end
-
-  def remove_child(name)
-    @child_metas.delete(name)
-
-    save
-  end
-
   def save
     digest = super
-    self.class.write('HEAD', digest) if root?
 
     digest
   end
 
-  def load_children
+  def set_child(child, name)
+    @child_metas[name] = child.to_meta
+
+    save
+
+    child
+  end
+
+  def get_child(name)
+    meta = @child_metas[name]
+    return nil if meta.nil?
+
+    self.class.load(meta) || fail #Note: Data Lost!!!!j:w
+  end
+
+  def get_children
     children = {}
 
-    each_meta do |name, meta|
-      child = self.class.load(meta)
+    @child_metas.each_key do |name|
+      child = get_child(name)
       children[name] = child
     end
 
     children
   end
 
-  def each(&block)
-    children = load_children 
+  def each_child(&block)
+    children = get_children 
     children.each &block
   end
 
-  def each_meta(&block)
-    @child_metas.each &block
-  end
+  def remove_child(name)
+    child = @child_metas.delete(name)
 
-  def insert(obj, path)
-    parent_path = File.dirname(path)
+    save
 
-    ancestors = []
-    parent = search(parent_path, ancestors: ancestors)
-    
-    raise Errno::ENOTDIR.new(parent.name) if not parent.dir?
-
-    child = obj
-    ancestors.reverse.each do |cur|
-      cur.insert_child(child)
-      child = cur
-    end
-
-    parent
-  end
-
-  def remove(path)
-    parent_path = File.dirname(path)
-
-    ancestors = []
-    parent = search(parent_path, ancestors: ancestors)
-    
-    raise Errno::ENOTDIR.new(parent.name) if not parent.dir?
-
-    child_name = File.basename(path)
-    parent.remove_child(child_name)
-
-    ancestors.pop
-
-    child = parent
-    ancestors.reverse.each do |cur|
-      cur.insert_child(child)
-      child = cur
-    end
-  end
-
-  def write(path, data:, offset:)
-    ancestors = []
-    blob = search(path, ancestors: ancestors)
-
-    raise Errno::EISDIR.new(path) if not blob.file?
-
-    length = blob.write(data: data, offset: offset)
-
-    ancestors.pop
-
-    child = blob
-    ancestors.reverse.each do |cur|
-      cur.insert_child(child)
-      child = cur
-    end
-
-    length
-  end
-
-  def setxattr(path, name:, data:, flags:)
-    ancestors = []
-    obj = search(path, ancestors: ancestors)
-
-    obj.setxattr(name, data, flags)
-
-    ancestors.pop
-
-    child = obj
-    ancestors.reverse.each do |cur|
-      cur.insert_child(child)
-      child = cur
-    end
-  end
-
-  def truncate(path, last:)
-    ancestors = []
-    blob = search(path, ancestors: ancestors)
-    blob.truncate(last)
-
-    ancestors.pop
-
-    child = blob
-    ancestors.reverse.each do |cur|
-      cur.insert_child(child)
-      child = cur
-    end
-
-    last
-  end
-
-  def read(path, offset: 0, size:)
-    blob = search(path)
-    raise Errno::EISDIR.new(path) if not blob.file?
-
-    blob.read(offset: offset, size: size)
-  end
-
-  def search(path, ancestors: nil)
-    path_array = path.split('/')
-
-    path_array.shift #Note: drop root("")
-
-    obj = follow(path_array, ancestors: ancestors)
-    return obj
-  end
-
-  def follow(path_array, ancestors: nil)
-    ancestors << self if ancestors
-
-    if path_array.empty? #Note: leaf
-      return self
-    else
-      child_name = path_array.shift
-      child_meta = @child_metas[ child_name ]
-
-      if child_meta
-        child = self.class.load(child_meta) || fail
-
-        return child.follow(path_array, ancestors: ancestors)
-      else
-        raise Errno::ENOENT.new
-      end
-    end
-  end
-
-  def to_s
-    return "Dir: " + @name + "(" + @mode.to_s + ")"
+    child
   end
 
   def to_core
@@ -230,7 +94,6 @@ class Usb::Tree::Node
       actime:      @actime,
       modtime:     @modtime,
       xattr:       @xattr,
-      name:        @name,
       mode:        @mode,
       child_metas: @child_metas,
     }
@@ -239,8 +102,7 @@ class Usb::Tree::Node
   def to_meta
     {
       type:   type,
-      name:   name,
-      digest: digest
+      digest: digest,
     }
   end
 

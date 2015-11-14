@@ -8,9 +8,9 @@ data_paths = [
   'data2',
 ]
 
-Usb::Tree::Node.setup_storage(data_paths)
-Usb::Tree::Blob.setup_storage(data_paths)
+Usb::Tree.setup_storage(data_paths)
 
-root = Usb::Tree::Node.load_HEAD || Usb::Tree::Node.new(name: "", mode: 0777)
+root = Usb::Tree::Root.load_HEAD || Usb::Tree::Root.new(mode: 0777)
 
+puts ARGV
 RFuse.main(ARGV) { fs = Usb::Tree.new(root) }

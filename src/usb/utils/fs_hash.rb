@@ -58,13 +58,13 @@ class Usb::Utils::FsHash
   end
 
   def [](key)
-    puts "key= #{key}"
+    #puts "key= #{key}"
     path = key2path(key)
     read(path)
   end
 
   def []=(key, val)
-    puts "key= #{key}"
+    #puts "key= #{key}"
     path = key2path(key)
     write(path, val)
   end

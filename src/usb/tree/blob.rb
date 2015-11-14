@@ -10,7 +10,6 @@ class Usb::Tree::Blob
   attr_accessor :content
 
   def initialize(
-    name:,
     mode:,
     uid:,
     gid:,
@@ -22,7 +21,6 @@ class Usb::Tree::Blob
   )
     fail if type && type != self.type
 
-    @name    = name
     @mode    = mode
 
     @uid     = uid
@@ -36,33 +34,35 @@ class Usb::Tree::Blob
   end
 
   def stat
-    RFuse::Stat.file(mode,:uid => uid, :gid => gid, :atime => actime, :mtime => modtime, :size => size)
+    RFuse::Stat.file(mode, uid: uid, gid: gid, atime: actime, mtime: modtime, size: size)
   end
 
   def size
-    return content.size
+    content.size
   end
 
   def write(data:, offset: 0)
-    last  = offset + data.length - 1
-    range = offset..last
+    length = offset + data.length - 1
+    range  = offset..length
     @content[range] = data
 
     save
 
-    data.length
+    data.bytesize
   end
 
-  def truncate(last)
-    range = 0..last
-    @content = @content[range]
+  def truncate(length)
+    range = 0..length
+    @content = @content[length]
 
     save
+
+    length
   end
 
   def read(offset:, size:)
-    last  = offset + size - 1
-    range = offset..last
+    length = offset + size - 1
+    range  = offset..length
 
     data = @content[range]
 
@@ -83,16 +83,11 @@ class Usb::Tree::Blob
     end
   end
 
-  def to_s
-    return "File: " + @name + "(" + @mode.to_s + ")"
-  end
-
   def to_core
     {
       type:     type,
       uid:      @uid,
       gid:      @gid,
-      name:     @name,
       mode:     @mode,
       content:  @content,
       actime:   @actime,
@@ -104,7 +99,6 @@ class Usb::Tree::Blob
   def to_meta
     {
       type:   type,
-      name:   name,
       digest: digest
     }
   end

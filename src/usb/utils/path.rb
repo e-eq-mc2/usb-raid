@@ -228,6 +228,10 @@ module Usb::Utils::Path
       !! child_of(path, suspects: suspects)
     end
 
+    def each_name(path, &block)
+      Pathname.new(path).each_filename &block
+    end
+
     private
     def windows_drive_regexp
       /\A([a-zA-Z]):/
