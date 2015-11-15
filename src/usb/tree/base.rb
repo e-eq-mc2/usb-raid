@@ -10,8 +10,8 @@ module Usb::Tree::Base
     end
 
     def load(meta)
-      type   = meta.fetch(:type  )
-      digest = meta.fetch(:digest)
+      type   = meta.fetch(:type   )
+      digest = meta.fetch(:digest )
 
       case type
       when Usb::Tree::Node.type then Usb::Tree::Node.do_load(digest)
@@ -25,6 +25,7 @@ module Usb::Tree::Base
       return nil if str.nil?
 
       core = unpack(str)
+      core.symbolize_keys!
 
       obj = new(core)
     end
@@ -98,7 +99,7 @@ module Usb::Tree::Base
   end
 
   def to_s
-    "#{type}: #{to_core}"
+    "#{type}: digest=#{digest} core=#{to_core}"
   end
 
 end

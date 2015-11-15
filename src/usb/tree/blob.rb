@@ -22,15 +22,13 @@ class Usb::Tree::Blob
     fail if type && type != self.type
 
     @mode    = mode
-
     @uid     = uid
     @gid     = gid
 
-    @actime  = actime  || 0
-    @modtime = modtime || 0
-    @xattr   = xattr   || Hash.new
-
-    @content = content || ""
+    @actime  = actime  || Time.now
+    @modtime = modtime || Time.now
+    @xattr   = xattr   || {}
+    @content = content || ''
   end
 
   def stat
@@ -38,7 +36,7 @@ class Usb::Tree::Blob
   end
 
   def size
-    content.size
+    @content.bytesize
   end
 
   def write(data:, offset: 0)
@@ -53,7 +51,7 @@ class Usb::Tree::Blob
 
   def truncate(length)
     range = 0..length
-    @content = @content[length]
+    @content = @content[range]
 
     save
 
@@ -73,32 +71,23 @@ class Usb::Tree::Blob
     false
   end
 
-  def follow(path_array, ancestors: nil)
-    ancestors << self if ancestors
-
-    if path_array.length != 0 then
-      raise Errno::ENOTDIR.new
-    else
-      return self
-    end
-  end
-
   def to_core
     {
       type:     type,
       uid:      @uid,
       gid:      @gid,
       mode:     @mode,
-      content:  @content,
       actime:   @actime,
       modtime:  @modtime,
       xattr:    @xattr,
+      content:  @content,
     }
   end
 
   def to_meta
     {
       type:   type,
+      size:   size,
       digest: digest
     }
   end

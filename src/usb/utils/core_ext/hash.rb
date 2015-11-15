@@ -23,6 +23,11 @@ class Hash
     return true
   end
 
+  def safe_fetch(key, defval)
+    raise KeyError.new("key not found: \"#{key}\"") if not key?(key) 
+    self[key] || defval
+  end
+
   #def sweep(keys)
   #  keys.each do |k| 
   #    fail Usb::Utils.error_message("NOT FOUND KEY #{k}") if not key?(k)

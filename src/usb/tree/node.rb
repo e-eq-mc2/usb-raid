@@ -8,25 +8,25 @@ class Usb::Tree::Node
   end
 
   def initialize(
-    mode:, 
-    type:        nil,
-    uid:         nil,
-    gid:         nil,
-    actime:      nil,
-    modtime:     nil,
-    xattr:       nil,
-    child_metas: nil
+    mode:,
+    uid:,
+    gid:,
+    actime:     nil,
+    modtime:    nil,
+    xattr:      nil,
+    children:   nil,
+    type:       nil
   )
     fail if type && type != self.type
 
-    @mode    = mode
-    @uid     = uid     || 0
-    @gid     = gid     || 0
-    @actime  = actime  || Time.now
-    @modtime = modtime || Time.now
-    @xattr   = xattr   || Hash.new
+    @mode     = mode
+    @uid      = uid
+    @gid      = gid
 
-    @child_metas = child_metas || {}
+    @actime   = actime   || Time.now
+    @modtime  = modtime  || Time.now
+    @xattr    = xattr    || {}
+    @children = children || {}
   end
 
   def stat
@@ -34,7 +34,7 @@ class Usb::Tree::Node
   end
 
   def size
-    return 48 #for testing only
+    @children.values.reduce(0) {|sum,c| sum + c[:size]}
   end
 
   def dir?
@@ -47,39 +47,39 @@ class Usb::Tree::Node
     digest
   end
 
-  def set_child(child, name)
-    @child_metas[name] = child.to_meta
+  def insert_child(obj, name)
+    @children[name] = obj.to_meta
 
     save
 
-    child
+    obj
   end
 
-  def get_child(name)
-    meta = @child_metas[name]
-    return nil if meta.nil?
+  def read_child(name)
+    child = @children[name]
+    return nil if child.nil?
 
-    self.class.load(meta) || fail #Note: Data Lost!!!!j:w
+    self.class.load(child) || fail #Note: Data Lost!!!!j:w
   end
 
-  def get_children
+  def read_children
     children = {}
 
-    @child_metas.each_key do |name|
-      child = get_child(name)
-      children[name] = child
+    @children.each_key do |name|
+      obj = read_child(name)
+      children[name] = obj
     end
 
     children
   end
 
-  def each_child(&block)
-    children = get_children 
+  def read_each_child(&block)
+    children = read_children 
     children.each &block
   end
 
   def remove_child(name)
-    child = @child_metas.delete(name)
+    child = @children.delete(name)
 
     save
 
@@ -88,20 +88,21 @@ class Usb::Tree::Node
 
   def to_core
     {
-      type:        type,
-      uid:         @uid,
-      gid:         @gid,
-      actime:      @actime,
-      modtime:     @modtime,
-      xattr:       @xattr,
-      mode:        @mode,
-      child_metas: @child_metas,
+      type:     type,
+      uid:      @uid,
+      gid:      @gid,
+      mode:     @mode,
+      actime:   @actime,
+      modtime:  @modtime,
+      xattr:    @xattr,
+      children: @children,
     }
   end
 
   def to_meta
     {
       type:   type,
+      size:   size,
       digest: digest,
     }
   end

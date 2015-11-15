@@ -40,11 +40,12 @@ module Usb::Utils::Serializer
         else fail
         end
 
-      if symbolize_keys && [:json, :msgpack].include?(format)
-        deep_symbolize_keys(data)
-      else
+      #if symbolize_keys && [:json, :msgpack].include?(format)
+      #if symbolize_keys && [:json, :msgpack].include?(format)
+      #  deep_symbolize_keys(data)
+      #else
         data
-      end
+      #end
     end
 
     def deep_symbolize_keys(data)

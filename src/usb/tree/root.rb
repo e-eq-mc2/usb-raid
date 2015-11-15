@@ -6,7 +6,6 @@ class Usb::Tree::Root < Usb::Tree::Node
 
       do_load(digest) if digest
     end
-
   end
 
   def update(path)
@@ -30,7 +29,7 @@ class Usb::Tree::Root < Usb::Tree::Node
       #####################
 
       child_name = File.basename(path)
-      parent.set_child(child, child_name)
+      parent.insert_child(child, child_name)
     end
   end
 
@@ -79,7 +78,7 @@ class Usb::Tree::Root < Usb::Tree::Node
     child, child_name = chain.first
 
     chain.drop(1).each do |parent, parent_name|
-      parent.set_child(child, child_name)
+      parent.insert_child(child, child_name)
       child      = parent
       child_name = parent_name
     end
@@ -99,7 +98,7 @@ class Usb::Tree::Root < Usb::Tree::Node
     chain << ( with_name ? [obj, name] : obj )
 
     Usb::Utils::Path.each_name(path) do |name|
-      obj = obj.get_child(name)
+      obj = obj.read_child(name)
       raise Errno::ENOENT.new(name) if obj.nil?
 
       chain << ( with_name ? [obj, name] : obj )

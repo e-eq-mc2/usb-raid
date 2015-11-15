@@ -10,7 +10,7 @@ data_paths = [
 
 Usb::Tree.setup_storage(data_paths)
 
-root = Usb::Tree::Root.load_HEAD || Usb::Tree::Root.new(mode: 0777)
+root = Usb::Tree::Root.load_HEAD || Usb::Tree::Root.new(mode: 0777, uid: 0, gid: 0)
 
 puts ARGV
 RFuse.main(ARGV) { fs = Usb::Tree.new(root) }
