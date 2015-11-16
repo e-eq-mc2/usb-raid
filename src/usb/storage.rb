@@ -3,9 +3,13 @@ class Usb::Storage
   def initialize(paths)
     fail if paths.count < 3
 
-    @devs = paths.map do |path|
+    @storages = paths.map do |path|
       Usb::Utils::FsHash.new(path, persistent: true)
     end
+  end
+
+  def config_path(root)
+    File.join(root, config.yml)
   end
 
   def config_path(root)
@@ -21,7 +25,7 @@ class Usb::Storage
   end
 
   def striping_count
-    @devs.count - 1
+    @storages.count - 1
   end
 
   def format
@@ -36,68 +40,94 @@ class Usb::Storage
     Usb::Utils::Serializer.unpack(str, format: format)
   end
 
-  def str2slices(str, size:)
+  def compute_parity(chunks)
+    chunks.reduce('') do |parity, chunk|
+      parity ^= chunk
+    end
+  end
+
+  def str2chunks(str, size:)
     str.force_encoding('ASCII-8BIT').chars.each_slice(size).map(&:join)
   end
 
   def []=(key, data)
     size       = data.size
-    slice_size = (size.to_f / striping_count).ceil
+    chunk_size = (size.to_f / striping_count).ceil
 
-    parity = ''
-    offset = 0
-    slices = str2slices(data, size: slice_size)
-    slice_sizes  = slices.map(&:bytesize)
+    chunks = str2chunks(data, size: chunk_size)
+    chunks << compute_parity(chunks)
+    chunk_sizes = chunks.map(&:bytesize)
 
-    index = 0
-    slices.each do |content|
+    chunks.each.with_index do |content,index|
       obj = {
         size:         size,
         index:        index,
-        slice_sizes:  slice_sizes,
-        content: content,
+        chunk_sizes:  chunk_sizes,
+        content:      content,
       }
 
-      dev = @devs[index]
-      dev[key] = pack(obj)
-      parity ^= content
-
-      index += 1
+      storage = @storages[index] || fail
+ 
+      begin
+        storage[key] = pack(obj)
+      rescue => e
+        raise Errno::EIO.new
+      end
     end
-
-    obj = {
-      size:         size,
-      index:        nil,
-      slice_sizes:  slice_sizes,
-      content:      parity,
-    }
-    dev = @devs[index]
-    dev[key] = pack(obj)
   end
 
   def [](key)
-    objs = @devs.map do |dev|
-      str   = dev[key]
-      slice = str ? unpack(str) : nil
+    objs = @storages.map do |storage|
+      str = storage[key]
+      str ? unpack(str) : nil
     end
 
-    fail_count = objs.count {|o| o.nil?} 
+    failure_count = objs.count {|o| o.nil?} 
 
-    return nil if fail_count == @devs.count
-    fail       if fail_count >  1  
+    raise Errno::EIO.new if failure_count >  1  
 
-    sorted_objs = objs
-      .select  {|o| o[:index]}
-      .sort_by {|o| o[:index]}
+    objs << repaire(objs) if failure_count == 1
 
-    size = 0
-    data = ''
-    sorted_objs.each do |obj|
-      size  = obj[:size   ]
-      data += obj[:content]
+    sorted_objs = objs.compact.sort_by {|o| o[:index]}
+
+    sorted_objs.pop
+
+    content = sorted_objs.reduce('') {|c,o| c + o[:content]}
+    content
+  end
+
+  def repaire(objs)
+    index2obj   = {}
+    size        = nil
+    chunk_sizes = nil
+    objs.each do |obj|
+      next if obj.nil?
+      index       = obj[:index      ]
+      size        = obj[:size       ]
+      chunk_sizes = obj[:chunk_sizes]
+
+      index2obj[index] = obj
     end
 
-    data[0..size-1]
+    missing_index = nil
+    missing_size  = nil
+    chunk_sizes.each_with_index do |csz,idx|
+      next if not index2obj[idx].nil?
+      missing_index = idx
+      missing_size  = csz
+    end
+
+    missing_content = ''
+    index2obj.values.each do |obj|
+      missing_content ^= obj[:content]
+    end
+
+    {
+      size:        size,
+      chunk_sizes: chunk_sizes,
+      index:       missing_index,
+      content:     missing_content[0..(missing_size - 1)]
+    }
   end
 
 end

@@ -107,6 +107,19 @@ class Usb::Tree::Node
     }
   end
 
+  def dump_json(name:)
+    {
+      type:   type,
+      name:   name,
+      digest: digest,
+      size:   size,
+      children: read_each_child.map do |name, child|
+        child.dump_json(name: name)
+      end
+    }
+  end
+
+
 end
 
 

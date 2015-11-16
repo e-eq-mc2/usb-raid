@@ -14,8 +14,9 @@ module Usb::Tree::Base
       digest = meta.fetch(:digest )
 
       case type
-      when Usb::Tree::Node.type then Usb::Tree::Node.do_load(digest)
-      when Usb::Tree::Blob.type then Usb::Tree::Blob.do_load(digest)
+      when Usb::Tree::Commit.type then Usb::Tree::Commit.do_load(digest)
+      when Usb::Tree::Node.type   then Usb::Tree::Node.do_load(digest)
+      when Usb::Tree::Blob.type   then Usb::Tree::Blob.do_load(digest)
       else fail
       end
     end
@@ -93,6 +94,7 @@ module Usb::Tree::Base
     str    = dump
     digest = to_digest(str)
 
+    ap digest
     self.class.write(digest, str)
 
     digest

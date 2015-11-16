@@ -92,6 +92,16 @@ class Usb::Tree::Blob
     }
   end
 
+  def dump_json(name:)
+    {
+      type:   type,
+      name:   name,
+      digest: digest,
+      size:   size,
+      content: content
+    }
+  end
+
 end
 
 

@@ -7,6 +7,7 @@ end
 require_relative 'tree/base'
 require_relative 'tree/node'
 require_relative 'tree/root'
+require_relative 'tree/commit'
 require_relative 'tree/blob'
 
 class Usb::Tree
@@ -182,20 +183,20 @@ class Usb::Tree
 
   # Some random numbers to show with df command
   def statfs(ctx, path)
-    s = RFuse::StatVfs.new()
-    s.f_bsize    = 1024
-    s.f_frsize   = 1024
-    s.f_blocks   = 1000000
-    s.f_bfree    = 500000
-    s.f_bavail   = 990000
-    s.f_files    = 10000
-    s.f_ffree    = 9900
-    s.f_favail   = 9900
-    s.f_fsid     = 23423
-    s.f_flag     = 0
-    s.f_namemax  = 10000
+    stat = RFuse::StatVfs.new()
+    stat.f_bsize    = 1024
+    stat.f_frsize   = 1024
+    stat.f_blocks   = 1000000
+    stat.f_bfree    = 500000
+    stat.f_bavail   = 990000
+    stat.f_files    = 10000
+    stat.f_ffree    = 9900
+    stat.f_favail   = 9900
+    stat.f_fsid     = 23423
+    stat.f_flag     = 0
+    stat.f_namemax  = 10000
 
-    s
+    stat
   end
 
   def ioctl(ctx, path, cmd, arg, ffi, flags, data)
