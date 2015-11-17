@@ -94,7 +94,6 @@ module Usb::Tree::Base
     str    = dump
     digest = to_digest(str)
 
-    ap digest
     self.class.write(digest, str)
 
     digest
