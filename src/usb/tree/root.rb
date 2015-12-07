@@ -1,9 +1,5 @@
 class Usb::Tree::Root < Usb::Tree::Node
 
-  def commit=(commit)
-    @commit = commit
-  end
-
   def update(path)
     chain = path2chain(path, with_name: true)
 
@@ -78,9 +74,6 @@ class Usb::Tree::Root < Usb::Tree::Node
       child      = parent
       child_name = parent_name
     end
-
-    self.commit = Commit.new(root: to_meta, parent: @commit ? @commit.to_meta : nil)
-    @commit.update_HEAD
   end
 
   def path2chain(path, with_name: false)

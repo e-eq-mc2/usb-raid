@@ -77,12 +77,13 @@ module Usb::Tree::Base
   end
 
   def dump
-    core   = to_core
-    str    = self.class.pack(core)
+    h = to_h
+    str  = self.class.pack(h)
   end
 
-  def to_digest(str = nil)
-    str ||= dump
+  def to_digest
+    core = to_core
+    str = self.class.pack(core)
     digest = Usb::Utils::Digest.hex(str)
   end
 
@@ -92,7 +93,7 @@ module Usb::Tree::Base
 
   def save
     str    = dump
-    digest = to_digest(str)
+    digest = to_digest
 
     self.class.write(digest, str)
 

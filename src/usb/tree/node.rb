@@ -92,6 +92,17 @@ class Usb::Tree::Node
       uid:      @uid,
       gid:      @gid,
       mode:     @mode,
+      xattr:    @xattr,
+      children: @children,
+    }
+  end
+
+  def to_h
+    {
+      type:     type,
+      uid:      @uid,
+      gid:      @gid,
+      mode:     @mode,
       actime:   @actime,
       modtime:  @modtime,
       xattr:    @xattr,
@@ -107,14 +118,20 @@ class Usb::Tree::Node
     }
   end
 
-  def dump_json(name:)
+  def to_h_recursively(name:)
     {
-      type:   type,
-      name:   name,
-      digest: digest,
-      size:   size,
+      type:    type,
+      uid:     @uid,
+      gid:     @gid,
+      mode:    @mode,
+      actime:  @actime,
+      modtime: @modtime,
+      xattr:   @xattr,
+      size:    size,
+      digest:  digest,
+      name:    name,
       children: read_each_child.map do |name, child|
-        child.dump_json(name: name)
+        child.to_h_recursively(name: name)
       end
     }
   end

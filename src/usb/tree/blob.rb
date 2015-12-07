@@ -77,6 +77,17 @@ class Usb::Tree::Blob
       uid:      @uid,
       gid:      @gid,
       mode:     @mode,
+      xattr:    @xattr,
+      content:  @content,
+    }
+  end
+
+  def to_h
+    {
+      type:     type,
+      uid:      @uid,
+      gid:      @gid,
+      mode:     @mode,
       actime:   @actime,
       modtime:  @modtime,
       xattr:    @xattr,
@@ -92,13 +103,19 @@ class Usb::Tree::Blob
     }
   end
 
-  def dump_json(name:)
+  def to_h_recursively(name:)
     {
-      type:   type,
-      name:   name,
-      digest: digest,
-      size:   size,
-      content: content
+      type:    type,
+      uid:     @uid,
+      gid:     @gid,
+      mode:    @mode,
+      actime:  @actime,
+      modtime: @modtime,
+      xattr:   @xattr,
+      size:    size,
+      digest:  digest,
+      content: content,
+      name:    name,
     }
   end
 

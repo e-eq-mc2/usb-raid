@@ -19,12 +19,31 @@ class Usb::Tree
     end
   end
 
-  def initialize(root)
-    @root = root
+  def initialize(commit)
+    @commit = commit
+    @commit.update_HEAD
+
+    @root   = commit.root
   end
 
   def log(str)
     puts str
+  end
+
+  def update_commit
+    @commit = Usb::Tree::Commit.new(
+      root:   @root.to_meta, 
+      parent: @commit ? @commit.to_meta : nil
+    )
+
+    @commit.save
+
+    #@commit.all_dump
+    @commit.update_HEAD
+  end
+
+  def dump_all(path)
+    @commit.dump_all if File.basename(path) == 'dump'
   end
 
   # The new readdir way, c+p-ed from getdir
@@ -51,14 +70,24 @@ class Usb::Tree
     log "#{__method__} path: #{path}".red
 
     obj = Node.new(mode: mode, uid: ctx.uid, gid: ctx.gid)
-    @root.insert(obj, path)
+    res = @root.insert(obj, path)
+
+    update_commit
+
+    res
   end
 
   def mknod(ctx,path,mode,major,minor)
     log "#{__method__} path: #{path}".red
     
+    dump_all(path)
+
     obj = Blob.new(mode: mode, uid: ctx.uid, gid: ctx.gid)
-    @root.insert(obj, path)
+    res = @root.insert(obj, path)
+
+    update_commit
+
+    res
   end
 
   def open(ctx,path,ffi)
@@ -84,7 +113,11 @@ class Usb::Tree
   def truncate(ctx, path, length)
     log "#{__method__} path: #{path}".red
 
-    @root.truncate(path, length: length)
+    res = @root.truncate(path, length: length)
+
+    update_commit
+
+    res
   end
 
   def utime(ctx, path, actime, modtime)
@@ -113,7 +146,11 @@ class Usb::Tree
     obj = @root.search(from_path)
 
     @root.remove(from_path)
-    @root.insert(obj, to_path)
+    res = @root.insert(obj, to_path)
+
+    update_commit
+
+    res
   end
 
   def link(ctx, path, as)
@@ -129,7 +166,11 @@ class Usb::Tree
   def write(ctx, path, data, offset, ffi)
     log "#{__method__} path: #{path}".red
 
-    @root.write(path, data: data, offset: offset)
+    res = @root.write(path, data: data, offset: offset)
+
+    update_commit
+
+    res
   end
 
   def setxattr(ctx, path, name, data, flags)

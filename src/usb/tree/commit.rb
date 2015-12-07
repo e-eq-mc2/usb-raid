@@ -1,4 +1,4 @@
-class Commit
+class Usb::Tree::Commit
   include Usb::Tree::Base
 
   class << self
@@ -21,12 +21,15 @@ class Commit
       root.save
 
       commit = new(root: root.to_meta, parent: nil)
-      root.commit = commit
+
+      commit.save
 
       commit
     end
 
     def write_json(data)
+      puts "#{__method__} path: #{json_path}".red
+
       File.open(json_path, 'w') do |file|
         file.write data.to_json
       end
@@ -39,9 +42,11 @@ class Commit
     @parent     = parent
     @created_at = created_at || Time.now
 
-    save
-
     fail if type && type != self.type
+  end
+
+  def size
+    @root[:size]
   end
 
   def root
@@ -64,8 +69,11 @@ class Commit
     commits
   end
 
+  def dump_all
+    self.class.write_json(history2h)
+  end
+
   def update_HEAD
-    self.class.write_json(all_dump_json)
     self.class.write('HEAD', digest)
   end
 
@@ -73,7 +81,7 @@ class Commit
     load_commits.each &block
   end
 
-  def to_core
+  def to_h
     {
       type:       type,
       root:       @root,
@@ -82,8 +90,8 @@ class Commit
     }
   end
 
-  def size
-    @root[:size]
+  def to_core
+    to_h
   end
 
   def to_meta
@@ -94,18 +102,18 @@ class Commit
     }
   end
 
-  def dump_json
+  def to_h_recursively
     {
       type:       type,
-      root:       root.dump_json(name: '/'),
+      root:       root.to_h_recursively(name: '/'),
       parent:     @parent,
       created_at: @created_at,
       size:       size,
     }
   end
 
-  def all_dump_json
-    load_commits.map {|c| c.dump_json}
+  def history2h
+    load_commits.map {|commit| commit.to_h_recursively}
   end
 
 end
