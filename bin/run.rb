@@ -3,8 +3,7 @@
 require_relative '../src/usb'
 
 data_paths = [
-  '/media/n-nishizawa/a0aed6ed-7cb1-434d-8cf7-f7783666cb8d',
-  #'data2',
+  '/path/to/the/mount/point',l
   'data1',
   'data0',
 ]
